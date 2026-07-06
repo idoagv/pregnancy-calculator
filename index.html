@@ -208,7 +208,7 @@ button.primary:hover { filter: brightness(1.05); }
 </style>
 </head>
 <body>
-<header class="topbar">
+<header class="topbar" dir="rtl"><!-- fixed dir: keeps the lang toggle from switching sides -->
     <a class="brand" href="#" data-i18n="title"></a>
     <nav>
         <a class="lang-toggle" id="langToggle" data-i18n="lang_other"></a>
@@ -298,8 +298,11 @@ const TRANSLATIONS = {
         status_current: "פעיל",
         status_upcoming: "עתידי",
         lang_other: "English",
-        weeks_short: "ש'",
-        days_short: "י'",
+        unit_week: "שבוע",
+        unit_weeks: "שבועות",
+        unit_day: "יום",
+        unit_days: "ימים",
+        ga_and: "ו-",
         error_input: "יש להזין תאריך וסת אחרונה או שבוע נוכחי",
     },
     en: {
@@ -326,8 +329,11 @@ const TRANSLATIONS = {
         status_current: "Current",
         status_upcoming: "Upcoming",
         lang_other: "עברית",
-        weeks_short: "w",
-        days_short: "d",
+        unit_week: "week",
+        unit_weeks: "weeks",
+        unit_day: "day",
+        unit_days: "days",
+        ga_and: "and",
         error_input: "Enter a last menstrual period date or current week",
     },
 };
@@ -341,10 +347,17 @@ function parseISO(s) {
     return new Date(Date.UTC(y, m - 1, d));
 }
 function toISO(dt) {
+    // ISO (yyyy-mm-dd) — used only for <input type="date"> values.
     const y = dt.getUTCFullYear();
     const m = String(dt.getUTCMonth() + 1).padStart(2, "0");
     const d = String(dt.getUTCDate()).padStart(2, "0");
     return `${y}-${m}-${d}`;
+}
+function fmtDate(dt) {
+    // Display format: dd-mm-yyyy.
+    const d = String(dt.getUTCDate()).padStart(2, "0");
+    const m = String(dt.getUTCMonth() + 1).padStart(2, "0");
+    return `${d}-${m}-${dt.getUTCFullYear()}`;
 }
 function addDays(dt, n) { return new Date(dt.getTime() + n * 86400000); }
 function diffDays(a, b) { return Math.round((a.getTime() - b.getTime()) / 86400000); }
@@ -470,13 +483,18 @@ function calculate() {
     }
 }
 
+function formatGA(weeks, days) {
+    // e.g. "8 שבועות ו-4 ימים" / "8 weeks and 4 days"; drops the days part at 0.
+    const w = `${weeks} ${weeks === 1 ? t("unit_week") : t("unit_weeks")}`;
+    if (days === 0) return w;
+    const d = `${days} ${days === 1 ? t("unit_day") : t("unit_days")}`;
+    return lang === "he" ? `${w} ${t("ga_and")}${d}` : `${w} ${t("ga_and")} ${d}`;
+}
+
 function renderResults(s, screenings) {
     resultsEl.replaceChildren();
-    resultsEl.appendChild(row(t("result_edd"), toISO(s.edd)));
-    resultsEl.appendChild(row(
-        t("result_now"),
-        `${s.weeks}${t("weeks_short")} ${s.days}${t("days_short")}`
-    ));
+    resultsEl.appendChild(row(t("result_edd"), fmtDate(s.edd)));
+    resultsEl.appendChild(row(t("result_now"), formatGA(s.weeks, s.days)));
     resultsEl.appendChild(row(t("result_trimester"), String(s.trimester)));
     resultsEl.appendChild(row(t("result_remaining"), String(s.daysRemaining)));
 
@@ -487,11 +505,14 @@ function renderResults(s, screenings) {
 
     screenings.forEach(w => {
         const strong = document.createElement("strong");
-        strong.append(`${toISO(w.start)} → ${toISO(w.end)} `);
+        // Force the date range LTR so it always reads start → end, even in RTL.
+        const range = document.createElement("span");
+        range.dir = "ltr";
+        range.textContent = `${fmtDate(w.start)} → ${fmtDate(w.end)}`;
         const badge = document.createElement("em");
         badge.className = "badge";
         badge.textContent = t("status_" + w.status);
-        strong.appendChild(badge);
+        strong.append(range, " ", badge);
         resultsEl.appendChild(row(t(w.key), strong, "screening status-" + w.status));
     });
 
