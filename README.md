@@ -3,8 +3,6 @@
 A self-contained, client-side pregnancy calculator. No server, no build step —
 a single `index.html` with inline CSS and JavaScript.
 
-**Live:** https://idoagv.github.io/pregnancy-calculator/
-
 ## Features
 - Estimated due date (Naegele's rule, with cycle-length adjustment)
 - Current gestational age and trimester
@@ -20,9 +18,27 @@ It's a single static file. Open `index.html` in a browser, or serve the folder:
 python -m http.server 8000
 ```
 
-## Deployment
-Hosted on GitHub Pages from the `master` branch root. Any push to `master`
-redeploys automatically. Never expires.
+Then visit http://localhost:8000.
+
+## Deploy to Vercel
+
+This repo is Vercel-ready — it's a static site with no build step, configured
+by [`vercel.json`](vercel.json).
+
+**Option A — Dashboard (easiest):**
+1. Go to https://vercel.com/new
+2. Import the `idoagv/pregnancy-calculator` repository
+3. Framework Preset: **Other** (auto-detected). Leave Build Command and Output
+   Directory empty.
+4. Click **Deploy**. Every push to `master` redeploys automatically.
+
+**Option B — CLI:**
+```
+npx vercel        # preview deployment
+npx vercel --prod # production deployment
+```
+
+No environment variables or build configuration are required.
 
 ## History
 Ported from a Flask app (the original date logic lived in `calc.py`). The
